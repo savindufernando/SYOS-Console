@@ -13,15 +13,15 @@ public class BillRepositoryImpl implements BillRepository {
 
     @Override
     public int save(Bill bill) {
-        String sql = "INSERT INTO bills (cashier_id, customer_id, bill_date, total_amount, cash_tendered, change_amount, transaction_type, payment_method, card_number, card_holder) " +
+        String sql = "INSERT INTO bills (user_id, customer_id, bill_date, total_amount, cash_tendered, change_amount, transaction_type, payment_method, card_number, card_holder) " +
                 "VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?)";
 
         try (Connection conn = DatabaseConnection.getInstance();
              PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
 
-            // 1 & 2: cashier_id / customer_id
+            // 1 & 2: user_id / customer_id
             if ("COUNTER".equalsIgnoreCase(bill.getTransactionType())) {
-                ps.setInt(1, bill.getCashierId());
+                ps.setInt(1, bill.getCashierId());   // cashier mapped to user_id
                 ps.setNull(2, Types.INTEGER);
             } else if ("ONLINE".equalsIgnoreCase(bill.getTransactionType())) {
                 ps.setNull(1, Types.INTEGER);
@@ -37,7 +37,7 @@ public class BillRepositoryImpl implements BillRepository {
             if ("CASH".equalsIgnoreCase(bill.getPaymentMethod())) {
                 ps.setDouble(4, bill.getCashTendered());
             } else {
-                ps.setDouble(4, bill.getTotalAmount()); // card payments = full paid
+                ps.setDouble(4, bill.getTotalAmount()); // card = fully paid
             }
 
             // 5. change_amount
@@ -93,19 +93,7 @@ public class BillRepositoryImpl implements BillRepository {
 
             ResultSet rs = ps.executeQuery();
             if (rs.next()) {
-                Bill bill = new Bill();
-                bill.setBillId(rs.getInt("bill_id"));
-                bill.setCashierId(rs.getInt("cashier_id"));
-                bill.setCustomerId(rs.getInt("customer_id"));
-                bill.setBillDate(rs.getTimestamp("bill_date").toLocalDateTime());
-                bill.setTotalAmount(rs.getDouble("total_amount"));
-                bill.setCashTendered(rs.getDouble("cash_tendered"));
-                bill.setChangeAmount(rs.getDouble("change_amount"));
-                bill.setTransactionType(rs.getString("transaction_type"));
-                bill.setPaymentMethod(rs.getString("payment_method"));
-                bill.setCardNumberMasked(rs.getString("card_number"));
-                bill.setCardHolder(rs.getString("card_holder"));
-                return bill;
+                return mapRowToBill(rs);
             }
 
         } catch (SQLException e) {
@@ -201,11 +189,11 @@ public class BillRepositoryImpl implements BillRepository {
         return bills;
     }
 
-    // ✅ helper method to avoid duplication
+    // ✅ helper to map DB row → Bill object
     private Bill mapRowToBill(ResultSet rs) throws SQLException {
         Bill bill = new Bill();
         bill.setBillId(rs.getInt("bill_id"));
-        bill.setCashierId(rs.getInt("cashier_id"));
+        bill.setCashierId(rs.getInt("user_id"));   // ✅ map DB user_id → cashierId
         bill.setCustomerId(rs.getInt("customer_id"));
         bill.setBillDate(rs.getTimestamp("bill_date").toLocalDateTime());
         bill.setTotalAmount(rs.getDouble("total_amount"));

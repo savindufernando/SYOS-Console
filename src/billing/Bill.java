@@ -39,6 +39,7 @@ public class Bill {
         this.billDate = LocalDateTime.now();
     }
 
+
     // === Business Methods ===
     public void addItem(BillItem item) {
         items.add(item);

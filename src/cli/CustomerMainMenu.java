@@ -153,8 +153,10 @@ public class CustomerMainMenu implements Menu {
         double total = cart.stream().mapToDouble(BillItem::getLineTotal).sum();
         Bill bill = new Bill(customer.getId());
         bill.setTransactionType("ONLINE");
-        bill.setPaymentMethod("CARD"); // online = always card
+        bill.setCustomerId(customer.getId());
+        bill.setPaymentMethod("CARD");
         bill.setTotalAmount(total);
+
 
         System.out.print("Enter Card Holder Name: ");
         String holder = scanner.nextLine();
