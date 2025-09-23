@@ -42,23 +42,17 @@ public class ReceiptHistoryMenu implements Menu {
     }
 
     private void viewByBillNumber() {
-        System.out.print("Enter Bill ID: ");
-        int billId;
-        try {
-            billId = Integer.parseInt(scanner.nextLine());
-        } catch (NumberFormatException e) {
-            System.out.println("❌ Invalid bill number.");
-            return;
-        }
+        System.out.print("Enter Bill Number (e.g., SYOS-20250924-001-CT): ");
+        String input = scanner.nextLine().trim();
 
-        Bill bill = billRepo.findById(billId);
+        Bill bill = billRepo.findByBillNumber(input);
         if (bill == null) {
             System.out.println("⚠️ Bill not found.");
             return;
         }
 
         // Load items for this bill
-        List<BillItem> items = billItemRepo.findByBillId(billId);
+        List<BillItem> items = billItemRepo.findByBillId(bill.getBillId());
         bill.getItems().addAll(items);
 
         System.out.println("\n--- Receipt ---");

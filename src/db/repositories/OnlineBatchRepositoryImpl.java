@@ -79,4 +79,37 @@ public class OnlineBatchRepositoryImpl implements OnlineBatchRepository {
         } catch (SQLException e) { e.printStackTrace(); }
         return list;
     }
+    @Override
+    public List<OnlineBatch> findAvailable() {
+        List<OnlineBatch> list = new ArrayList<>();
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement(
+                     "SELECT * FROM online_batches WHERE quantity > 0")) {
+            ResultSet rs = ps.executeQuery();
+            while (rs.next()) {
+                OnlineBatch b = new OnlineBatch();
+                b.setId(rs.getInt("online_batch_id"));
+                b.setProductId(rs.getInt("product_id"));
+                b.setQuantity(rs.getInt("quantity"));
+                Date d = rs.getDate("last_restocked");
+                if (d != null) b.setLastRestocked(d.toLocalDate());
+                list.add(b);
+            }
+        } catch (SQLException e) { e.printStackTrace(); }
+        return list;
+    }
+
+    @Override
+    public boolean reduceStock(int productId, int qty) {
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement(
+                     "UPDATE online_batches SET quantity = quantity - ? WHERE product_id = ? AND quantity >= ?")) {
+            ps.setInt(1, qty);
+            ps.setInt(2, productId);
+            ps.setInt(3, qty);
+            return ps.executeUpdate() > 0;
+        } catch (SQLException e) { e.printStackTrace(); }
+        return false;
+    }
+
 }

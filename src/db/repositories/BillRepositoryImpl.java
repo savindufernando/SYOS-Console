@@ -13,74 +13,109 @@ public class BillRepositoryImpl implements BillRepository {
 
     @Override
     public int save(Bill bill) {
-        String sql = "INSERT INTO bills (user_id, customer_id, bill_date, total_amount, cash_tendered, change_amount, transaction_type, payment_method, card_number, card_holder) " +
-                "VALUES (?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?)";
-
-        try (Connection conn = DatabaseConnection.getInstance();
-             PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
-
-            // 1 & 2: user_id / customer_id
-            if ("COUNTER".equalsIgnoreCase(bill.getTransactionType())) {
-                ps.setInt(1, bill.getCashierId());   // cashier mapped to user_id
-                ps.setNull(2, Types.INTEGER);
-            } else if ("ONLINE".equalsIgnoreCase(bill.getTransactionType())) {
-                ps.setNull(1, Types.INTEGER);
-                ps.setInt(2, bill.getCustomerId());
-            } else {
-                throw new IllegalArgumentException("Invalid transaction type: " + bill.getTransactionType());
+        try (Connection conn = DatabaseConnection.getInstance()) {
+            // 🔹 Step 1: Get next daily serial
+            String serialSql = "SELECT COALESCE(MAX(bill_serial), 0) + 1 FROM bills WHERE DATE(bill_date) = CURDATE()";
+            try (PreparedStatement psSerial = conn.prepareStatement(serialSql)) {
+                ResultSet rs = psSerial.executeQuery();
+                if (rs.next()) {
+                    bill.setBillSerial(rs.getInt(1));
+                }
             }
 
-            // 3. total_amount
-            ps.setDouble(3, bill.getTotalAmount());
+            // 🔹 Step 2: Build formatted bill_number before insert
+            String formattedNumber = bill.generateBillNumber("SYOS");
+            bill.setBillNumber(formattedNumber);
 
-            // 4. cash_tendered
-            if ("CASH".equalsIgnoreCase(bill.getPaymentMethod())) {
-                ps.setDouble(4, bill.getCashTendered());
-            } else {
-                ps.setDouble(4, bill.getTotalAmount()); // card = fully paid
+            // 🔹 Step 3: Insert bill
+            String sql = "INSERT INTO bills (bill_serial, bill_number, user_id, customer_id, bill_date, total_amount, cash_tendered, change_amount, transaction_type, payment_method, card_number, card_holder) " +
+                    "VALUES (?, ?, ?, ?, NOW(), ?, ?, ?, ?, ?, ?, ?)";
+
+            try (PreparedStatement ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS)) {
+                // 1. bill_serial
+                ps.setInt(1, bill.getBillSerial());
+
+                // 2. bill_number
+                ps.setString(2, bill.getBillNumber());
+
+                // 3 & 4. user_id / customer_id
+                if ("COUNTER".equalsIgnoreCase(bill.getTransactionType())) {
+                    ps.setInt(3, bill.getCashierId());   // cashier mapped to user_id
+                    ps.setNull(4, Types.INTEGER);
+                } else if ("ONLINE".equalsIgnoreCase(bill.getTransactionType())) {
+                    ps.setNull(3, Types.INTEGER);
+                    ps.setInt(4, bill.getCustomerId());
+                } else {
+                    throw new IllegalArgumentException("Invalid transaction type: " + bill.getTransactionType());
+                }
+
+                // 5. total_amount
+                ps.setDouble(5, bill.getTotalAmount());
+
+                // 6. cash_tendered
+                if ("CASH".equalsIgnoreCase(bill.getPaymentMethod())) {
+                    ps.setDouble(6, bill.getCashTendered());
+                } else {
+                    ps.setDouble(6, bill.getTotalAmount()); // card = fully paid
+                }
+
+                // 7. change_amount
+                if ("CASH".equalsIgnoreCase(bill.getPaymentMethod())) {
+                    ps.setDouble(7, bill.getChangeAmount());
+                } else {
+                    ps.setDouble(7, 0.0);
+                }
+
+                // 8. transaction_type
+                ps.setString(8, bill.getTransactionType());
+
+                // 9. payment_method
+                ps.setString(9, bill.getPaymentMethod());
+
+                // 10. card_number
+                if ("CARD".equalsIgnoreCase(bill.getPaymentMethod())) {
+                    ps.setString(10, bill.getCardNumberMasked());
+                } else {
+                    ps.setNull(10, Types.VARCHAR);
+                }
+
+                // 11. card_holder
+                if ("CARD".equalsIgnoreCase(bill.getPaymentMethod())) {
+                    ps.setString(11, bill.getCardHolder());
+                } else {
+                    ps.setNull(11, Types.VARCHAR);
+                }
+
+                ps.executeUpdate();
+
+                ResultSet rs = ps.getGeneratedKeys();
+                if (rs.next()) {
+                    int id = rs.getInt(1);
+                    bill.setBillId(id);
+                    return id;
+                }
             }
-
-            // 5. change_amount
-            if ("CASH".equalsIgnoreCase(bill.getPaymentMethod())) {
-                ps.setDouble(5, bill.getChangeAmount());
-            } else {
-                ps.setDouble(5, 0.0);
-            }
-
-            // 6. transaction_type
-            ps.setString(6, bill.getTransactionType());
-
-            // 7. payment_method
-            ps.setString(7, bill.getPaymentMethod());
-
-            // 8. card_number
-            if ("CARD".equalsIgnoreCase(bill.getPaymentMethod())) {
-                ps.setString(8, bill.getCardNumberMasked());
-            } else {
-                ps.setNull(8, Types.VARCHAR);
-            }
-
-            // 9. card_holder
-            if ("CARD".equalsIgnoreCase(bill.getPaymentMethod())) {
-                ps.setString(9, bill.getCardHolder());
-            } else {
-                ps.setNull(9, Types.VARCHAR);
-            }
-
-            ps.executeUpdate();
-
-            ResultSet rs = ps.getGeneratedKeys();
-            if (rs.next()) {
-                int id = rs.getInt(1);
-                bill.setBillId(id);
-                return id;
-            }
-
         } catch (SQLException e) {
             System.out.println("❌ Error saving bill: " + e.getMessage());
         }
-
         return -1;
+    }
+
+    public Bill findByBillNumber(String billNumber) {
+        String sql = "SELECT * FROM bills WHERE bill_number = ?";
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, billNumber);
+            ResultSet rs = ps.executeQuery();
+            if (rs.next()) {
+                return mapRowToBill(rs);
+            }
+
+        } catch (SQLException e) {
+            System.out.println("❌ Error finding bill by bill_number: " + e.getMessage());
+        }
+        return null;
     }
 
     @Override
@@ -188,12 +223,35 @@ public class BillRepositoryImpl implements BillRepository {
 
         return bills;
     }
+    public List<Bill> findByCustomerId(int customerId) {
+        List<Bill> bills = new ArrayList<>();
+        String sql = "SELECT * FROM bills WHERE customer_id = ? AND transaction_type = 'ONLINE' ORDER BY bill_date DESC";
+
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, customerId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                bills.add(mapRowToBill(rs));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("❌ Error fetching bills for customer: " + e.getMessage());
+        }
+
+        return bills;
+    }
+
 
     // ✅ helper to map DB row → Bill object
     private Bill mapRowToBill(ResultSet rs) throws SQLException {
         Bill bill = new Bill();
         bill.setBillId(rs.getInt("bill_id"));
-        bill.setCashierId(rs.getInt("user_id"));   // ✅ map DB user_id → cashierId
+        bill.setBillSerial(rs.getInt("bill_serial"));
+        bill.setBillNumber(rs.getString("bill_number"));
+        bill.setCashierId(rs.getInt("user_id"));
         bill.setCustomerId(rs.getInt("customer_id"));
         bill.setBillDate(rs.getTimestamp("bill_date").toLocalDateTime());
         bill.setTotalAmount(rs.getDouble("total_amount"));

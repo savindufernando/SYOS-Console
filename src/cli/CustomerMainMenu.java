@@ -13,6 +13,7 @@ import java.util.*;
 public class CustomerMainMenu implements Menu {
     private final Scanner scanner = new Scanner(System.in);
     private final Customer customer;
+    private final db.repositories.OnlineBatchRepositoryImpl onlineBatchRepo = new db.repositories.OnlineBatchRepositoryImpl();
     private final ProductRepository productRepo = new ProductRepositoryImpl();
     private final BillRepositoryImpl billRepo = new BillRepositoryImpl();
     private final List<BillItem> cart = new ArrayList<>();
@@ -31,6 +32,7 @@ public class CustomerMainMenu implements Menu {
             System.out.println("3. View Cart");
             System.out.println("4. Checkout");
             System.out.println("5. Logout");
+            System.out.println("6. View Purchase History");  // ✅ new
             System.out.print("Choose option: ");
 
             int choice;
@@ -50,16 +52,23 @@ public class CustomerMainMenu implements Menu {
                     System.out.println("👋 Logging out...");
                     return;
                 }
+                case 6 -> viewPurchaseHistory();  // ✅ new
                 default -> System.out.println("❌ Invalid choice.");
             }
         }
     }
 
+
     private void viewProducts() {
-        List<Product> products = productRepo.findAll();
-        System.out.println("\n=== Available Products ===");
-        for (Product p : products) {
-            System.out.println(p.getCode() + " | " + p.getName() + " | LKR " + p.getUnitPrice());
+        List<stock.batch.OnlineBatch> batches = onlineBatchRepo.findAvailable();
+        System.out.println("\n=== Available Products (Online) ===");
+        for (stock.batch.OnlineBatch b : batches) {
+            Product p = productRepo.findById(b.getProductId()); // load product details
+            if (p != null) {
+                System.out.println(p.getCode() + " | " + p.getName() +
+                        " | LKR " + p.getUnitPrice() +
+                        " | Qty Available: " + b.getQuantity());
+            }
         }
 
         System.out.print("Do you want to add to cart? (y/n): ");
@@ -67,6 +76,7 @@ public class CustomerMainMenu implements Menu {
             addToCart();
         }
     }
+
 
     private void searchProduct() {
         System.out.print("Enter product name or code: ");
@@ -100,9 +110,14 @@ public class CustomerMainMenu implements Menu {
         System.out.print("Enter quantity: ");
         int qty = Integer.parseInt(scanner.nextLine());
 
-        BillItem item = new BillItem(product, qty);
-        cart.add(item);
-        System.out.println("✅ Added " + qty + "x " + product.getName() + " to cart.");
+        // ✅ Reduce stock from online_batches
+        if (onlineBatchRepo.reduceStock(product.getId(), qty)) {
+            BillItem item = new BillItem(product, qty);
+            cart.add(item);
+            System.out.println("✅ Added " + qty + "x " + product.getName() + " to cart.");
+        } else {
+            System.out.println("❌ Not enough stock in online store.");
+        }
     }
 
     private void viewCart() {
@@ -157,7 +172,6 @@ public class CustomerMainMenu implements Menu {
         bill.setPaymentMethod("CARD");
         bill.setTotalAmount(total);
 
-
         System.out.print("Enter Card Holder Name: ");
         String holder = scanner.nextLine();
         System.out.print("Enter Card Number (16 digits): ");
@@ -173,9 +187,51 @@ public class CustomerMainMenu implements Menu {
             bill.addItem(item);
         }
 
-        billRepo.save(bill);
+        // ✅ Save bill first (get its billId)
+        int billId = billRepo.save(bill);
 
-        System.out.println("✅ Checkout complete. Bill ID: " + bill.getBillId());
+        // ✅ Save items to DB
+        db.repositories.BillItemRepositoryImpl billItemRepo = new db.repositories.BillItemRepositoryImpl();
+        for (BillItem item : cart) {
+            billItemRepo.save(billId, item);
+        }
+
+        System.out.println("✅ Checkout complete. Bill No: " + bill.getBillNumber());
         cart.clear();
     }
+
+    private void viewPurchaseHistory() {
+        List<Bill> bills = billRepo.findByCustomerId(customer.getId());
+
+        if (bills.isEmpty()) {
+            System.out.println("⚠️ You have no past purchases.");
+            return;
+        }
+
+        System.out.println("\n=== Your Purchase History ===");
+        for (Bill bill : bills) {
+            System.out.println("Bill No: " + bill.getBillNumber());
+            System.out.println("Date: " + bill.getBillDate());
+            System.out.println("Total: LKR " + bill.getTotalAmount());
+            System.out.println("Payment Method: " + bill.getPaymentMethod());
+
+            // 🔹 Fetch and display bill items
+            List<BillItem> items = new db.repositories.BillItemRepositoryImpl().findByBillId(bill.getBillId());
+            if (items.isEmpty()) {
+                System.out.println("   (No items found for this bill)");
+            } else {
+                System.out.println("   Purchased Items:");
+                for (BillItem item : items) {
+                    System.out.printf("     - %s x%d = LKR %.2f%n",
+                            item.getProduct().getName(),
+                            item.getQuantity(),
+                            item.getLineTotal());
+                }
+            }
+
+            System.out.println("-----------------------------------");
+        }
+    }
+
+
 }

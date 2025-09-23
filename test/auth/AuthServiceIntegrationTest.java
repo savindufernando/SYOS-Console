@@ -19,7 +19,7 @@ public class AuthServiceIntegrationTest {
     @Test
     void shouldLoginSuccessfully_withValidCredentials() {
         // these must exist in your DB
-        User user = authService.login("savindu", "1234");
+        User user = authService.login("Savindu", "1234");
         assertNotNull(user);
         assertEquals("Cashier", user.getRole());   // ✅ user_levels working
     }
@@ -27,9 +27,9 @@ public class AuthServiceIntegrationTest {
     @Test
     void shouldLoginSuccessfully_asManager() {
         // insert or ensure manager user exists
-        User user = authService.login("manager1", "managerpass");
+        User user = authService.login("Hirusha", "5678");
         assertNotNull(user);
-        assertEquals("MANAGER", user.getRole());
+        assertEquals("Manager", user.getRole());
     }
 
     @Test

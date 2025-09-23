@@ -7,6 +7,8 @@ import java.util.List;
 public interface BillRepository {
     int save(Bill bill);  // returns generated bill_id
 
+    Bill findByBillNumber(String billNumber);  // ✅ correct
+
     Bill findById(int billId);
     List<Bill> findRecent(int limit);
     List<Bill> findByDate(LocalDate date);

@@ -2,7 +2,10 @@ package billing;
 
 public class BillPrinter {
     public void print(Bill bill) {
-        System.out.println("\n=== SYOS BILL #" + bill.getBillId() + " ===");
+        // use new structured bill number
+        String formattedBillNo = bill.generateBillNumber("SYOS");
+
+        System.out.println("\n=== SYOS BILL " + formattedBillNo + " ===");
         System.out.println("Date: " + bill.getBillDate());
         System.out.println("Cashier: " + bill.getCashierName());
         System.out.println("Transaction: " + bill.getTransactionType());

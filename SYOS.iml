@@ -36,5 +36,6 @@
     <orderEntry type="library" name="objenesis-3.4" level="project" />
     <orderEntry type="library" name="byte-buddy-1.15.0" level="project" />
     <orderEntry type="library" name="byte-buddy-agent-1.15.0" level="project" />
+    <orderEntry type="library" name="junit-platform-console-standalone-1.10.1" level="project" />
   </component>
 </module>

@@ -8,4 +8,8 @@ public interface OnlineBatchRepository {
     void update(OnlineBatch batch);
     OnlineBatch findByProduct(int productId);
     List<OnlineBatch> findAll();
+
+    // ✅ new helpers
+    List<OnlineBatch> findAvailable(); // only >0 quantity
+    boolean reduceStock(int productId, int qty);
 }
