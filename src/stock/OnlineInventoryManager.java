@@ -12,6 +12,10 @@ public class OnlineInventoryManager {
     }
 
     public void reduceOnlineStock(int productId, int quantity) {
+        if (quantity <= 0) {
+            throw new IllegalArgumentException("❌ Quantity must be greater than 0");
+        }
+
         OnlineBatch online = onlineRepo.findByProduct(productId);
         if (online == null) {
             throw new RuntimeException("❌ No online stock for product " + productId);
@@ -27,4 +31,5 @@ public class OnlineInventoryManager {
         System.out.println("✅ Reduced online stock by " + quantity +
                 " → Remaining: " + online.getQuantity());
     }
+
 }
