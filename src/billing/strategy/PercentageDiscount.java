@@ -13,12 +13,17 @@ public class PercentageDiscount implements DiscountPolicy {
         return Math.max(0, discounted);
     }
 
-    public double getPercent() {   // ✅ Added
+    public double getPercent() {
         return percent;
     }
 
     @Override
     public String toString() {
         return "Percentage Discount: " + percent + "% off";
+    }
+
+    @Override
+    public String getName() {
+        return percent + "% OFF";
     }
 }

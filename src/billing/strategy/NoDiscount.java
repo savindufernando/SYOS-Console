@@ -10,4 +10,9 @@ public class NoDiscount implements DiscountPolicy {
     public String toString() {
         return "No Discount";
     }
+
+    @Override
+    public String getName() {
+        return "No Discount";
+    }
 }

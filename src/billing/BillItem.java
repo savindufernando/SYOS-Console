@@ -30,6 +30,18 @@ public class BillItem {
         this(product, quantity, new NoDiscount()); // defaults to no discount
     }
 
+    // === Constructor with lineTotal from DB (for reports) ===
+    public BillItem(Product product, int quantity, double lineTotal) {
+        this.product = product;
+        this.quantity = quantity;
+        this.discount = new NoDiscount(); // default
+        this.lineTotal = lineTotal;
+
+        this.discountName = "No Discount";
+        this.discountType = "NONE";
+        this.discountValue = 0;
+    }
+
     // === Business logic ===
     private void recalcLineTotal() {
         double discountedPrice = discount.apply(product.getUnitPrice());

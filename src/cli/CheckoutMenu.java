@@ -7,6 +7,8 @@ import billing.BillPrinter;
 import billing.CheckoutService;
 import db.repositories.ProductRepositoryImpl;
 import stock.Product;
+import db.repositories.UserRepository;
+
 
 import java.util.Scanner;
 
@@ -14,8 +16,10 @@ public class CheckoutMenu implements Menu {
     private final Scanner scanner = new Scanner(System.in);
     private final ProductRepositoryImpl productRepo = new ProductRepositoryImpl();
     private final CheckoutService checkoutService = new CheckoutService();
-    private final BillPrinter billPrinter = new BillPrinter();
+    private final BillPrinter billPrinter = new BillPrinter(new UserRepository());
+
     private final User loggedUser;
+
 
     public CheckoutMenu(User loggedUser) {
         this.loggedUser = loggedUser;
@@ -23,22 +27,28 @@ public class CheckoutMenu implements Menu {
 
     @Override
     public void start() {
-        System.out.println("\n=== Checkout Menu (" + loggedUser.getRole() + ": " + loggedUser.getName() + ") ===");
+        System.out.println("\n╔═════════════════════════════════════════╗");
+        System.out.printf("║  Checkout Menu (%s: %s)  ║%n", loggedUser.getRole(), loggedUser.getName());
+        System.out.println("╠═════════════════════════════════════════╣");
+        System.out.println("║ Started new bill. Add products to begin.  ║");
+        System.out.println("╚═════════════════════════════════════════╝");
         checkoutService.startBill(loggedUser.getId(), loggedUser.getName());
 
         while (true) {
-            System.out.println("\n1. Add Product");
-            System.out.println("2. Remove Product");
-            System.out.println("3. Finalize Checkout");
-            System.out.println("4. Cancel & Exit");
-            System.out.println("5. View Current Bill");
-            System.out.print("Choose option: ");
+            System.out.println("\n╔═════════════════════════════════════════╗");
+            System.out.println("║ 1. Add Product                          ║");
+            System.out.println("║ 2. Remove Product                       ║");
+            System.out.println("║ 3. Finalize Checkout                    ║");
+            System.out.println("║ 4. Cancel & Exit                        ║");
+            System.out.println("║ 5. View Current Bill                    ║");
+            System.out.println("╚═════════════════════════════════════════╝");
+            System.out.print("» Choose option: ");
 
             int choice;
             try {
                 choice = Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
-                System.out.println("❌ Invalid choice. Please enter a number 1–5.");
+                printMessage("! Invalid choice. Please enter a number 1-5.", true);
                 continue;
             }
 
@@ -47,71 +57,77 @@ public class CheckoutMenu implements Menu {
                 case 2 -> handleRemoveProduct();
                 case 3 -> {
                     if (checkoutService.getCurrentBill().getItems().isEmpty()) {
-                        System.out.println("⚠️ No items in bill. Cancelling checkout.");
+                        printMessage("! No items in bill. Cancelling checkout.", true);
                         return;
                     }
                     finalizeCheckout();
                     return; // exit after finalizing
                 }
                 case 4 -> {
-                    System.out.println("❌ Checkout cancelled.");
+                    printMessage("! Checkout cancelled.", false);
                     return;
                 }
                 case 5 -> viewCurrentBill();
-                default -> System.out.println("❌ Invalid choice, try again.");
+                default -> printMessage("! Invalid choice, try again.", true);
             }
         }
     }
 
     private void handleAddProduct() {
-        System.out.print("Enter product code: ");
+        System.out.println("\n╔═════════════════════════════════════════╗");
+        System.out.println("║             Add Product                 ║");
+        System.out.println("╠═════════════════════════════════════════╣");
+        System.out.print("» Enter product code: ");
         String code = scanner.nextLine().trim();
 
         Product p = productRepo.findByCode(code);
         if (p == null) {
-            System.out.println("❌ Product not found!");
+            printMessage("! Product not found!", true);
             return;
         }
 
-        System.out.print("Enter quantity: ");
+        System.out.print("» Enter quantity: ");
         int qty;
         try {
             qty = Integer.parseInt(scanner.nextLine());
         } catch (NumberFormatException e) {
-            System.out.println("❌ Invalid quantity.");
+            printMessage("! Invalid quantity.", true);
             return;
         }
 
         checkoutService.addProduct(p, qty);
-        System.out.println("✔ Added " + qty + " x " + p.getName() + " (Unit price: " + p.getUnitPrice() + ")");
+        printMessage("+ Added " + qty + " x " + p.getName() + " (Unit price: " + p.getUnitPrice() + ")", false);
     }
 
     private void handleRemoveProduct() {
         Bill bill = checkoutService.getCurrentBill();
         if (bill.getItems().isEmpty()) {
-            System.out.println("⚠️ No items in the bill to remove.");
+            printMessage("! No items in the bill to remove.", true);
             return;
         }
 
-        System.out.println("\n--- Current Bill Items ---");
+        System.out.println("\n╔═════════════════════════════════════════╗");
+        System.out.println("║          Current Bill Items             ║");
+        System.out.println("╠═════════════════════════════════════════╣");
         int index = 1;
         for (BillItem item : bill.getItems()) {
-            System.out.printf("%d. %s x%d = %.2f%n",
+            System.out.printf("║ %d. %s x%d = %.2f%n",
                     index++, item.getProduct().getName(), item.getQuantity(), item.getLineTotal());
         }
+        System.out.println("╚═════════════════════════════════════════╝");
 
-        System.out.print("Enter item number to remove: ");
+        System.out.print("» Enter item number to remove: ");
         try {
             int choice = Integer.parseInt(scanner.nextLine());
             if (choice < 1 || choice > bill.getItems().size()) {
-                System.out.println("❌ Invalid item number.");
+                printMessage("! Invalid item number.", true);
                 return;
             }
             BillItem toRemove = bill.getItems().get(choice - 1);
             checkoutService.removeProduct(toRemove);
-            System.out.println("✔ Removed " + toRemove.getProduct().getName() + " from bill.");
+            printMessage("+ Removed " + toRemove.getProduct().getName() + " from bill.", false);
         } catch (NumberFormatException e) {
-            System.out.println("❌ Invalid input.");
+            printMessage("! Invalid input.", true);
         }
     }
 
@@ -121,57 +137,63 @@ public class CheckoutMenu implements Menu {
 
         double cash = 0;
         while (true) {
-            System.out.print("Enter cash tendered (Total: " + total + ", or 0 to cancel): ");
+            System.out.printf("» Enter cash tendered (Total: %.2f): ", total);
             try {
                 cash = Double.parseDouble(scanner.nextLine());
             } catch (NumberFormatException e) {
-                System.out.println("❌ Invalid cash amount. Please enter a number.");
+                printMessage("! Invalid cash amount. Please enter a number.", true);
                 continue;
             }
 
             if (cash == 0) {
-                System.out.println("❌ Checkout cancelled at payment step.");
-                return; // exit without finalizing
+                printMessage("! Checkout cancelled at payment step.", false);
+                return;
             }
 
             if (cash < total) {
-                System.out.printf("❌ Insufficient amount! Total is %.2f, but tendered %.2f%n", total, cash);
-                System.out.println("👉 Please enter at least the total amount or type 0 to cancel.");
+                printMessage("! Insufficient amount! Please enter at least the total.", true);
             } else {
-                break; // ✅ valid cash entered
+                break;
             }
         }
 
-        // ✅ Finalize and save bill
         checkoutService.finalizeBill(cash);
-
-        // ✅ Print receipt immediately
         billPrinter.print(bill);
+        printMessage("+ Checkout complete. Printing receipt...", false);
 
-        // ✅ Ask cashier if they want to view receipt again
-        System.out.print("Do you want to view the receipt again? (y/n): ");
+        System.out.print("\n» View receipt again? (y/n): ");
         String choice = scanner.nextLine().trim().toLowerCase();
         if (choice.equals("y") || choice.equals("yes")) {
-            System.out.println("\n--- Receipt Reprint ---");
+            System.out.println("\n╔═════════════════════════════════════════╗");
+            System.out.println("║           Receipt Reprint               ║");
+            System.out.println("╚═════════════════════════════════════════╝");
             billPrinter.print(bill);
         }
 
-        System.out.println("✅ Checkout complete. Returning to Main Menu...");
+        printMessage("+ Returning to Main Menu...", false);
     }
-
 
     private void viewCurrentBill() {
         Bill bill = checkoutService.getCurrentBill();
         if (bill.getItems().isEmpty()) {
-            System.out.println("⚠️ Bill is currently empty.");
+            printMessage("! Bill is currently empty.", false);
             return;
         }
 
-        System.out.println("\n--- Current Bill Preview ---");
-        billPrinter.print(bill);  // ✅ use the same printer for consistency
+        System.out.println("\n╔═════════════════════════════════════════╗");
+        System.out.println("║          Current Bill Preview           ║");
+        System.out.println("╚═════════════════════════════════════════╝");
+        billPrinter.print(bill);
     }
 
+    // A helper method for consistent framed messages with symbols
+    private void printMessage(String message, boolean isError) {
+        System.out.println("\n╔═════════════════════════════════════════╗");
+        System.out.printf("║ %-39s ║%n", message);
+        System.out.println("╚═════════════════════════════════════════╝");
+        if (isError) {
+            System.out.println("Press Enter to continue...");
+            scanner.nextLine();
+        }
+    }
 }
-
-
-

@@ -19,7 +19,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 /**
- * Extended unit tests for InventoryManager.
+ * Extended unit tests for InventoryManager (Product-based).
  */
 class InventoryManagerTest {
 
@@ -29,6 +29,8 @@ class InventoryManagerTest {
     private StockReductionStrategy strategy;
     private InventoryManager manager;
 
+    private Product product; // used for all tests
+
     @BeforeEach
     void setUp() {
         inventoryRepo = Mockito.mock(InventoryBatchRepository.class);
@@ -37,6 +39,10 @@ class InventoryManagerTest {
         strategy = Mockito.mock(StockReductionStrategy.class);
 
         manager = new InventoryManager(inventoryRepo, shelfRepo, onlineRepo, strategy);
+
+        // Default product
+        product = new NonPerishableProduct("P001", "Rice", 100.0);
+        product.setId(1);
     }
 
     // ---------- ADD INVENTORY ----------
@@ -121,7 +127,7 @@ class InventoryManagerTest {
         when(inventoryRepo.findByProduct(1)).thenReturn(new ArrayList<>(List.of(batch)));
         when(shelfRepo.findByProduct(1)).thenReturn(null);
 
-        manager.restockShelf(1, 5);
+        manager.restockShelf(product, 5);
 
         assertEquals(5, batch.getQuantity()); // reduced
         verify(inventoryRepo).update(batch);
@@ -141,7 +147,7 @@ class InventoryManagerTest {
         when(inventoryRepo.findByProduct(1)).thenReturn(new ArrayList<>(List.of(batch)));
         when(shelfRepo.findByProduct(1)).thenReturn(shelf);
 
-        manager.restockShelf(1, 5);
+        manager.restockShelf(product, 5);
 
         assertEquals(3, batch.getQuantity());
         assertEquals(7, shelf.getQuantity());
@@ -152,7 +158,7 @@ class InventoryManagerTest {
     void shouldNotRestockShelfWhenNoInventory() {
         when(inventoryRepo.findByProduct(1)).thenReturn(List.of());
 
-        manager.restockShelf(1, 5);
+        manager.restockShelf(product, 5);
 
         verifyNoInteractions(shelfRepo);
     }
@@ -166,7 +172,7 @@ class InventoryManagerTest {
         when(inventoryRepo.findByProduct(1)).thenReturn(new ArrayList<>(List.of(batch)));
         when(shelfRepo.findByProduct(1)).thenReturn(null);
 
-        manager.restockShelf(1, 5);
+        manager.restockShelf(product, 5);
 
         assertEquals(0, batch.getQuantity()); // used up
         verify(inventoryRepo).update(batch);
@@ -184,7 +190,7 @@ class InventoryManagerTest {
         when(inventoryRepo.findByProduct(1)).thenReturn(new ArrayList<>(List.of(batch)));
         when(onlineRepo.findByProduct(1)).thenReturn(null);
 
-        manager.restockOnline(1, 10);
+        manager.restockOnline(product, 10);
 
         assertEquals(2, batch.getQuantity());
         verify(inventoryRepo).update(batch);
@@ -204,7 +210,7 @@ class InventoryManagerTest {
         when(inventoryRepo.findByProduct(1)).thenReturn(new ArrayList<>(List.of(batch)));
         when(onlineRepo.findByProduct(1)).thenReturn(online);
 
-        manager.restockOnline(1, 5);
+        manager.restockOnline(product, 5);
 
         assertEquals(5, batch.getQuantity());
         assertEquals(8, online.getQuantity());
@@ -215,7 +221,7 @@ class InventoryManagerTest {
     void shouldNotRestockOnlineWhenNoInventory() {
         when(inventoryRepo.findByProduct(1)).thenReturn(List.of());
 
-        manager.restockOnline(1, 5);
+        manager.restockOnline(product, 5);
 
         verifyNoInteractions(onlineRepo);
     }
@@ -229,7 +235,7 @@ class InventoryManagerTest {
         when(inventoryRepo.findByProduct(1)).thenReturn(new ArrayList<>(List.of(batch)));
         when(onlineRepo.findByProduct(1)).thenReturn(null);
 
-        manager.restockOnline(1, 5);
+        manager.restockOnline(product, 5);
 
         assertEquals(0, batch.getQuantity());
         verify(inventoryRepo).update(batch);

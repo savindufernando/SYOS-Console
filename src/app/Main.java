@@ -10,17 +10,22 @@ public class Main {
         Scanner scanner = new Scanner(System.in);
 
         while (true) {
-            System.out.println("\n=== Welcome to SYOS ===");
-            System.out.println("1. SYOS Employee System");
-            System.out.println("2. Online Store");
-            System.out.println("3. Exit");
-            System.out.print("Choose option: ");
+            // Main menu UI
+            System.out.println("\n╔═════════════════════════════════════════╗");
+            System.out.println("║         Welcome to SYOS                 ║");
+            System.out.println("╠═════════════════════════════════════════╣");
+            System.out.println("║ 1. SYOS Employee System                 ║");
+            System.out.println("║ 2. Online Store                         ║");
+            System.out.println("╟─────────────────────────────────────────╢");
+            System.out.println("║ 3. Exit                                 ║");
+            System.out.println("╚═════════════════════════════════════════╝");
+            System.out.print("» Choose an option: ");
 
             int choice;
             try {
                 choice = Integer.parseInt(scanner.nextLine());
             } catch (NumberFormatException e) {
-                System.out.println("❌ Invalid input. Please enter a number.");
+                printMessage("! Invalid input. Please enter a number.", true);
                 continue;
             }
 
@@ -34,11 +39,22 @@ public class Main {
                     new OnlineStoreMenu().start();
                     break;
                 case 3:
-                    System.out.println("👋 Thank you for visiting SYOS. Goodbye!");
+                    printMessage("-> Thank you for visiting SYOS. Goodbye!", false);
                     return;
                 default:
-                    System.out.println("❌ Invalid choice. Try again.");
+                    printMessage("! Invalid choice. Try again.", true);
             }
+        }
+    }
+
+    // A helper method for consistent framed messages with symbols
+    private static void printMessage(String message, boolean isError) {
+        System.out.println("\n╔═════════════════════════════════════════╗");
+        System.out.printf("║ %-39s ║%n", message);
+        System.out.println("╚═════════════════════════════════════════╝");
+        if (isError) {
+            System.out.println("Press Enter to continue...");
+            new Scanner(System.in).nextLine();
         }
     }
 }

@@ -12,6 +12,7 @@ public class Bill {
     private String billNumber;
     private Integer cashierId;       // null if ONLINE
     private Integer customerId;      // null if COUNTER
+    private Integer userId;  // who created the bill
     private String cashierName;      // optional, for receipts
     private LocalDateTime billDate;  // Full timestamp
     private LocalDate billDay;       // Just date part for serial grouping
@@ -75,10 +76,21 @@ public class Bill {
         String typePart = transactionType.equalsIgnoreCase("ONLINE") ? "ON" : "CT";
         return storeCode + "-" + datePart + "-" + serialPart + "-" + typePart;
     }
+    public void setItems(List<BillItem> items) {
+        this.items.clear();
+        if (items != null) {
+            this.items.addAll(items);
+        }
+    }
+
 
     // === Getters & Setters ===
     public int getBillId() { return billId; }
     public void setBillId(int billId) { this.billId = billId; }
+
+    public Integer getUserId() { return userId; }   // ✅ now available
+    public void setUserId(Integer userId) { this.userId = userId; }
+
 
     public int getBillSerial() { return billSerial; }
     public void setBillSerial(int billSerial) { this.billSerial = billSerial; }

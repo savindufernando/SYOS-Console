@@ -19,6 +19,15 @@ public abstract class Product implements Cloneable {
     public String getName() { return name; }
     public double getUnitPrice() { return unitPrice; }
 
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public void setUnitPrice(double unitPrice) {
+        this.unitPrice = unitPrice;
+    }
+
+
     @Override
     public Product clone() {
         try {

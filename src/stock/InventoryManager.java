@@ -7,6 +7,8 @@ import stock.repositories.InventoryBatchRepository;
 import stock.repositories.ShelfBatchRepository;
 import stock.repositories.OnlineBatchRepository;
 import stock.strategy.StockReductionStrategy;
+import stock.strategy.FifoStrategy;
+import stock.strategy.FefoStrategy;
 
 import java.time.LocalDate;
 import java.util.List;
@@ -43,12 +45,20 @@ public class InventoryManager {
         return shelfRepo.findByProduct(productId);
     }
 
-    // 🔹 Move stock from inventory → shelf (FIFO/FEFO)
-    public void restockShelf(int productId, int quantity) {
-        List<InventoryBatch> invBatches = inventoryRepo.findByProduct(productId);
+    // Instead of storing one global strategy, decide dynamically
+    public void restockShelf(Product product, int quantity) {
+        List<InventoryBatch> invBatches = inventoryRepo.findByProduct(product.getId());
         if (invBatches == null || invBatches.isEmpty()) {
-            System.out.println("⚠️ No inventory available for product " + productId);
+            System.out.println("⚠️ No inventory available for product " + product.getId());
             return;
+        }
+
+        // 🔹 Pick strategy based on product type
+        StockReductionStrategy strategy;
+        if (product instanceof PerishableProduct) {
+            strategy = new FefoStrategy();  // expiry first, then purchase date
+        } else {
+            strategy = new FifoStrategy();  // purchase date only
         }
 
         strategy.sortInventoryBatches(invBatches);
@@ -67,10 +77,10 @@ public class InventoryManager {
             inventoryRepo.update(inv);
 
             // Update or create shelf stock
-            ShelfBatch shelf = shelfRepo.findByProduct(productId);
+            ShelfBatch shelf = shelfRepo.findByProduct(product.getId());
             if (shelf == null) {
                 shelf = new ShelfBatch();
-                shelf.setProductId(productId);
+                shelf.setProductId(product.getId());
                 shelf.setQuantity(move);
                 shelf.setLastRestocked(LocalDate.now());
                 shelfRepo.save(shelf);
@@ -84,18 +94,26 @@ public class InventoryManager {
         }
 
         if (remaining > 0) {
-            System.out.println("⚠️ Could not move full quantity. Missing " + remaining + " units from inventory.");
+            System.out.println("⚠️ Could not move full quantity. Missing " + remaining + " units.");
         } else {
             System.out.println("✅ Successfully restocked SHELF with " + quantity + " units.");
         }
     }
 
     // 🔹 Move stock from inventory → online batches
-    public void restockOnline(int productId, int quantity) {
-        List<InventoryBatch> invBatches = inventoryRepo.findByProduct(productId);
+    public void restockOnline(Product product, int quantity) {
+        List<InventoryBatch> invBatches = inventoryRepo.findByProduct(product.getId());
         if (invBatches == null || invBatches.isEmpty()) {
-            System.out.println("⚠️ No inventory available for product " + productId);
+            System.out.println("⚠️ No inventory available for product " + product.getId());
             return;
+        }
+
+        // 🔹 Pick strategy based on product type
+        StockReductionStrategy strategy;
+        if (product instanceof PerishableProduct) {
+            strategy = new FefoStrategy();  // expiry first, FIFO if same expiry
+        } else {
+            strategy = new FifoStrategy();  // purchase date
         }
 
         strategy.sortInventoryBatches(invBatches);
@@ -115,10 +133,10 @@ public class InventoryManager {
             inventoryRepo.update(inv);
 
             // Update or create online stock
-            OnlineBatch online = onlineRepo.findByProduct(productId);
+            OnlineBatch online = onlineRepo.findByProduct(product.getId());
             if (online == null) {
                 online = new OnlineBatch();
-                online.setProductId(productId);
+                online.setProductId(product.getId());
                 online.setQuantity(move);
                 online.setLastRestocked(LocalDate.now());
                 onlineRepo.save(online);

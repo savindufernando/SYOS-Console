@@ -60,10 +60,28 @@ class FefoStrategyTest {
 
     @Test
     void shouldNotFailWithEmptyList() {
-        List<InventoryBatch> batches = new ArrayList<>(); // mutable empty list
+        List<InventoryBatch> batches = new ArrayList<>();
 
         strategy.sortInventoryBatches(batches);
 
         assertTrue(batches.isEmpty());
+    }
+
+    @Test
+    void shouldPlaceNullExpiryDatesLast() {
+        InventoryBatch expiringSoon = new InventoryBatch();
+        expiringSoon.setProductId(1);
+        expiringSoon.setExpiryDate(LocalDate.of(2024, 1, 1));
+
+        InventoryBatch noExpiry = new InventoryBatch();
+        noExpiry.setProductId(2);
+        noExpiry.setExpiryDate(null);
+
+        List<InventoryBatch> batches = new ArrayList<>(List.of(noExpiry, expiringSoon));
+
+        strategy.sortInventoryBatches(batches);
+
+        assertEquals(expiringSoon, batches.get(0));
+        assertEquals(noExpiry, batches.get(1));
     }
 }

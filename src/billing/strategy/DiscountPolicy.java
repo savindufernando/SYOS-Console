@@ -7,4 +7,5 @@ public interface DiscountPolicy {
      * @return discounted price
      */
     double apply(double basePrice);
+    String getName();
 }

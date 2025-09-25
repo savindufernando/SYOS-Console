@@ -131,4 +131,36 @@ public class ProductRepositoryImpl implements ProductRepository {
         p.setId(id);
         return p;
     }
+    @Override
+    public void delete(int id) {
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM products WHERE product_id=?")) {
+            ps.setInt(1, id);
+            int rows = ps.executeUpdate();
+            if (rows == 0) {
+                System.out.println("⚠️ No product found with ID " + id);
+            } else {
+                System.out.println("✅ Product deleted (ID: " + id + ")");
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error deleting product: " + e.getMessage());
+        }
+    }
+
+    @Override
+    public void deleteByCode(String code) {
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement("DELETE FROM products WHERE code=?")) {
+            ps.setString(1, code);
+            int rows = ps.executeUpdate();
+            if (rows == 0) {
+                System.out.println("⚠️ No product found with code " + code);
+            } else {
+                System.out.println("✅ Product deleted (Code: " + code + ")");
+            }
+        } catch (SQLException e) {
+            System.out.println("❌ Error deleting product: " + e.getMessage());
+        }
+    }
+
 }

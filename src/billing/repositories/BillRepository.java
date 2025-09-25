@@ -14,4 +14,7 @@ public interface BillRepository {
     List<Bill> findByDate(LocalDate date);
     List<Bill> findBetweenDates(LocalDate start, LocalDate end);
     List<Bill> findAll();
+
+    List<Bill> findByDateAndType(LocalDate date, String type);
+
 }

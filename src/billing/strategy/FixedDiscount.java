@@ -13,12 +13,17 @@ public class FixedDiscount implements DiscountPolicy {
         return Math.max(0, discounted);
     }
 
-    public double getAmount() {   // ✅ Added
+    public double getAmount() {
         return amount;
     }
 
     @Override
     public String toString() {
-        return "Fixed Discount: -" + amount;
+        return "Fixed Discount: -LKR " + amount;
+    }
+
+    @Override
+    public String getName() {
+        return "LKR " + amount + " OFF";
     }
 }

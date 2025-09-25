@@ -13,6 +13,8 @@ import java.util.*;
 public class DailySalesReport extends Report {
     private final BillRepository billRepo = new BillRepositoryImpl();
     private final List<DailySalesRecord> records = new ArrayList<>();
+    private String selectedType = "ALL"; // default
+
 
     public DailySalesReport() {
         this.title = "Daily Sales Report";
@@ -46,4 +48,13 @@ public class DailySalesReport extends Report {
                     rec.code, rec.name, rec.quantitySold, rec.revenue);
         }
     }
+
+    public void setType(String type) {
+        if (type == null || type.isBlank()) {
+            this.selectedType = "ALL";
+        } else {
+            this.selectedType = type.toUpperCase();
+        }
+    }
+
 }

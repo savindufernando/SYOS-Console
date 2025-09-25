@@ -3,10 +3,11 @@ package billing.commands;
 import billing.Bill;
 import billing.BillPrinter;
 import billing.CheckoutService;
+import db.repositories.UserRepository;
 
 public class FinalizeBillCommand {
     private final CheckoutService checkoutService;
-    private final BillPrinter billPrinter = new BillPrinter();
+    private final BillPrinter billPrinter = new BillPrinter(new UserRepository());
 
     public FinalizeBillCommand(CheckoutService checkoutService) {
         this.checkoutService = checkoutService;

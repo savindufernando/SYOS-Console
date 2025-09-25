@@ -10,4 +10,7 @@ public interface ProductRepository {
     Product findById(int id);
     List<Product> findAll();
     List<Product> search(String keyword);
+
+    void delete(int id);            // ✅ New method
+    void deleteByCode(String code);
 }

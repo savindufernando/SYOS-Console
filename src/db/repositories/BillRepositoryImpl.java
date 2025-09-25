@@ -100,6 +100,34 @@ public class BillRepositoryImpl implements BillRepository {
         }
         return -1;
     }
+    @Override
+    public Bill findById(int billId) {
+        String sql = "SELECT * FROM bills WHERE bill_id = ?";
+        Bill bill = null;
+
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, billId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    bill = mapRowToBill(rs);
+                }
+            }
+
+            if (bill != null) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("❌ Error finding bill by ID: " + e.getMessage());
+        }
+
+        return bill;
+    }
+
+
 
     public Bill findByBillNumber(String billNumber) {
         String sql = "SELECT * FROM bills WHERE bill_number = ?";
@@ -119,43 +147,36 @@ public class BillRepositoryImpl implements BillRepository {
     }
 
     @Override
-    public Bill findById(int billId) {
-        String sql = "SELECT * FROM bills WHERE bill_id = ?";
-        try (Connection conn = DatabaseConnection.getInstance();
-             PreparedStatement ps = conn.prepareStatement(sql)) {
-
-            ps.setInt(1, billId);
-
-            ResultSet rs = ps.executeQuery();
-            if (rs.next()) {
-                return mapRowToBill(rs);
-            }
-
-        } catch (SQLException e) {
-            System.out.println("❌ Error finding bill by ID: " + e.getMessage());
-        }
-        return null;
-    }
-
-    @Override
-    public List<Bill> findRecent(int limit) {
+    public List<Bill> findByDateAndType(LocalDate date, String type) {
         List<Bill> bills = new ArrayList<>();
-        String sql = "SELECT * FROM bills ORDER BY bill_date DESC LIMIT ?";
+        String sql = "SELECT * FROM bills WHERE DATE(bill_date) = ? ";
+
+        if (!"ALL".equalsIgnoreCase(type)) {
+            sql += "AND transaction_type = ? ";
+        }
 
         try (Connection conn = DatabaseConnection.getInstance();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ps.setInt(1, limit);
-            ResultSet rs = ps.executeQuery();
+            ps.setDate(1, java.sql.Date.valueOf(date));
+            if (!"ALL".equalsIgnoreCase(type)) {
+                ps.setString(2, type.toUpperCase());
+            }
 
-            while (rs.next()) {
-                bills.add(mapRowToBill(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bills.add(mapRowToBill(rs)); // headers only
+                }
+            }
+
+            // ✅ load items after closing ResultSet
+            for (Bill bill : bills) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
             }
 
         } catch (SQLException e) {
-            System.out.println("❌ Error fetching recent bills: " + e.getMessage());
+            e.printStackTrace();
         }
-
         return bills;
     }
 
@@ -168,10 +189,15 @@ public class BillRepositoryImpl implements BillRepository {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setDate(1, Date.valueOf(date));
-            ResultSet rs = ps.executeQuery();
 
-            while (rs.next()) {
-                bills.add(mapRowToBill(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bills.add(mapRowToBill(rs));
+                }
+            }
+
+            for (Bill bill : bills) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
             }
 
         } catch (SQLException e) {
@@ -192,13 +218,45 @@ public class BillRepositoryImpl implements BillRepository {
             ps.setDate(1, Date.valueOf(start));
             ps.setDate(2, Date.valueOf(end));
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                bills.add(mapRowToBill(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bills.add(mapRowToBill(rs));
+                }
+            }
+
+            for (Bill bill : bills) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
             }
 
         } catch (SQLException e) {
             System.out.println("❌ Error fetching bills between dates: " + e.getMessage());
+        }
+
+        return bills;
+    }
+
+    @Override
+    public List<Bill> findRecent(int limit) {
+        List<Bill> bills = new ArrayList<>();
+        String sql = "SELECT * FROM bills ORDER BY bill_date DESC LIMIT ?";
+
+        try (Connection conn = DatabaseConnection.getInstance();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, limit);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bills.add(mapRowToBill(rs));
+                }
+            }
+
+            for (Bill bill : bills) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
+            }
+
+        } catch (SQLException e) {
+            System.out.println("❌ Error fetching recent bills: " + e.getMessage());
         }
 
         return bills;
@@ -212,9 +270,14 @@ public class BillRepositoryImpl implements BillRepository {
         try (Connection conn = DatabaseConnection.getInstance();
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
-            ResultSet rs = ps.executeQuery();
-            while (rs.next()) {
-                bills.add(mapRowToBill(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bills.add(mapRowToBill(rs));
+                }
+            }
+
+            for (Bill bill : bills) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
             }
 
         } catch (SQLException e) {
@@ -223,6 +286,7 @@ public class BillRepositoryImpl implements BillRepository {
 
         return bills;
     }
+
     public List<Bill> findByCustomerId(int customerId) {
         List<Bill> bills = new ArrayList<>();
         String sql = "SELECT * FROM bills WHERE customer_id = ? AND transaction_type = 'ONLINE' ORDER BY bill_date DESC";
@@ -231,10 +295,15 @@ public class BillRepositoryImpl implements BillRepository {
              PreparedStatement ps = conn.prepareStatement(sql)) {
 
             ps.setInt(1, customerId);
-            ResultSet rs = ps.executeQuery();
 
-            while (rs.next()) {
-                bills.add(mapRowToBill(rs));
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    bills.add(mapRowToBill(rs));
+                }
+            }
+
+            for (Bill bill : bills) {
+                bill.setItems(loadBillItems(bill.getBillId(), conn));
             }
 
         } catch (SQLException e) {
@@ -244,9 +313,15 @@ public class BillRepositoryImpl implements BillRepository {
         return bills;
     }
 
-
-    // ✅ helper to map DB row → Bill object
+    // ✅ helper to map DB row → Bill object (default, keeps compatibility)
     private Bill mapRowToBill(ResultSet rs) throws SQLException {
+        try (Connection conn = DatabaseConnection.getInstance()) {
+            return mapRowToBill(rs, conn);
+        }
+    }
+
+    // ✅ helper with shared connection
+    private Bill mapRowToBill(ResultSet rs, Connection conn) throws SQLException {
         Bill bill = new Bill();
         bill.setBillId(rs.getInt("bill_id"));
         bill.setBillSerial(rs.getInt("bill_serial"));
@@ -261,6 +336,53 @@ public class BillRepositoryImpl implements BillRepository {
         bill.setPaymentMethod(rs.getString("payment_method"));
         bill.setCardNumberMasked(rs.getString("card_number"));
         bill.setCardHolder(rs.getString("card_holder"));
+
+        // ✅ load bill items with same connection
+        bill.setItems(loadBillItems(bill.getBillId(), conn));
+
         return bill;
     }
+
+    private List<billing.BillItem> loadBillItems(int billId, Connection conn) throws SQLException {
+        List<billing.BillItem> items = new ArrayList<>();
+        String sql = "SELECT bi.quantity, bi.line_total, " +
+                "p.code, p.name, p.unit_price, p.type " +
+                "FROM bill_items bi " +
+                "JOIN products p ON bi.product_id = p.product_id " +
+                "WHERE bi.bill_id = ?";
+
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, billId);
+            ResultSet rs = ps.executeQuery();
+
+            while (rs.next()) {
+                stock.Product product;
+                if ("PERISHABLE".equalsIgnoreCase(rs.getString("type"))) {
+                    product = new stock.PerishableProduct(
+                            rs.getString("code"),
+                            rs.getString("name"),
+                            rs.getDouble("unit_price"),
+                            null
+                    );
+                } else {
+                    product = new stock.NonPerishableProduct(
+                            rs.getString("code"),
+                            rs.getString("name"),
+                            rs.getDouble("unit_price")
+                    );
+                }
+
+                billing.BillItem item = new billing.BillItem(
+                        product,
+                        rs.getInt("quantity"),
+                        rs.getDouble("line_total") // uses your new constructor
+                );
+
+                items.add(item);
+            }
+        }
+        return items;
+    }
+
+
 }
