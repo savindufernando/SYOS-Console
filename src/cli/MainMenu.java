@@ -17,6 +17,7 @@ public class MainMenu implements Menu {
     public void start() {
         String userRole = loggedUser.getRole();
         boolean isAdminOrManager = "MANAGER".equalsIgnoreCase(userRole) || "ADMIN".equalsIgnoreCase(userRole);
+        boolean isCashier = "CASHIER".equalsIgnoreCase(userRole);
 
         while (true) {
             // Build the menu UI in a single block
@@ -33,8 +34,13 @@ public class MainMenu implements Menu {
                 System.out.println("║ 6. Discount Management                     ║");
                 System.out.println("╟────────────────────────────────────────────╢");
                 System.out.println("║ 7. Logout                                  ║");
+            } else if (isCashier) {
+                // Modified for Cashier: adding Receipt History
+                System.out.println("║ 2. Receipt History                         ║");
+                System.out.println("╟────────────────────────────────────────────╢");
+                System.out.println("║ 3. Logout                                  ║");
             } else {
-                // For Cashier/other roles, the options are different
+                // For other roles, the options are different
                 System.out.println("╟────────────────────────────────────────────╢");
                 System.out.println("║ 2. Logout                                  ║");
             }
@@ -54,6 +60,16 @@ public class MainMenu implements Menu {
                     case 5 -> new ReportMenu().start();
                     case 6 -> new DiscountMenu().start();
                     case 7 -> {
+                        printMessage("-> Logging out...", false);
+                        return;
+                    }
+                    default -> printMessage("! Invalid choice, please try again.", true);
+                }
+            } else if (isCashier) {
+                switch (choice) {
+                    case 1 -> new CheckoutMenu(loggedUser).start();
+                    case 2 -> new ReceiptHistoryMenu().start(); // New case for cashier
+                    case 3 -> {
                         printMessage("-> Logging out...", false);
                         return;
                     }
