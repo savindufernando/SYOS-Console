@@ -22,7 +22,7 @@ public class BillReport extends Report {
     @Override
     protected void fetchData(LocalDate start, LocalDate end) {
         records.clear();
-        LocalDate from = (start != null) ? start : LocalDate.now(); // ✅ default today
+        LocalDate from = (start != null) ? start : LocalDate.now();
         LocalDate to   = (end != null) ? end : from;
 
         List<Bill> bills = billRepo.findBetweenDates(from, to);

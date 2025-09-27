@@ -32,7 +32,7 @@ public class UserRepository {
                 );
             }
         } catch (Exception e) {
-            System.out.println("❌ DB Error: " + e.getMessage());
+            System.out.println("! DB Error: " + e.getMessage());
         }
         return null;
     }
@@ -59,7 +59,7 @@ public class UserRepository {
                 );
             }
         } catch (Exception e) {
-            System.out.println("❌ DB Error: " + e.getMessage());
+            System.out.println("! DB Error: " + e.getMessage());
         }
         return null;
     }

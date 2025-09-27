@@ -92,7 +92,7 @@ public class ProductRepositoryImpl implements ProductRepository {
                 products.add(mapRowToProduct(rs));
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error searching products: " + e.getMessage());
+            System.out.println("! Error searching products: " + e.getMessage());
         }
         return products;
     }
@@ -109,7 +109,7 @@ public class ProductRepositoryImpl implements ProductRepository {
                 products.add(mapRowToProduct(rs));
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error fetching products: " + e.getMessage());
+            System.out.println("! Error fetching products: " + e.getMessage());
         }
         return products;
     }
@@ -138,12 +138,12 @@ public class ProductRepositoryImpl implements ProductRepository {
             ps.setInt(1, id);
             int rows = ps.executeUpdate();
             if (rows == 0) {
-                System.out.println("⚠️ No product found with ID " + id);
+                System.out.println(" !!️ No product found with ID " + id);
             } else {
-                System.out.println("✅ Product deleted (ID: " + id + ")");
+                System.out.println(" Product deleted (ID: " + id + ")");
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error deleting product: " + e.getMessage());
+            System.out.println("! Error deleting product: " + e.getMessage());
         }
     }
 
@@ -154,12 +154,12 @@ public class ProductRepositoryImpl implements ProductRepository {
             ps.setString(1, code);
             int rows = ps.executeUpdate();
             if (rows == 0) {
-                System.out.println("⚠️ No product found with code " + code);
+                System.out.println("! No product found with code " + code);
             } else {
-                System.out.println("✅ Product deleted (Code: " + code + ")");
+                System.out.println(" Product deleted (Code: " + code + ")");
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error deleting product: " + e.getMessage());
+            System.out.println("! Error deleting product: " + e.getMessage());
         }
     }
 

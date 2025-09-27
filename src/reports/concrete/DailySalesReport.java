@@ -23,7 +23,7 @@ public class DailySalesReport extends Report {
     @Override
     protected void fetchData(LocalDate start, LocalDate end) {
         records.clear();
-        LocalDate date = (start != null) ? start : LocalDate.now(); // ✅ fallback to today
+        LocalDate date = (start != null) ? start : LocalDate.now(); // fallback to today
         List<Bill> bills = billRepo.findByDate(date);
 
         Map<String, DailySalesRecord> map = new HashMap<>();

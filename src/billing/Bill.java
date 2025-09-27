@@ -88,7 +88,7 @@ public class Bill {
     public int getBillId() { return billId; }
     public void setBillId(int billId) { this.billId = billId; }
 
-    public Integer getUserId() { return userId; }   // ✅ now available
+    public Integer getUserId() { return userId; }
     public void setUserId(Integer userId) { this.userId = userId; }
 
 

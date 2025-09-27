@@ -41,12 +41,12 @@ public class ProductService {
         return repo.findByCode(code);
     }
 
-    // ✅ Search
+    // Search
     public List<Product> searchProducts(String keyword) {
         return repo.search(keyword);
     }
 
-    // ✅ List
+    // List
     public List<Product> listAllProducts() {
         return repo.findAll();
     }

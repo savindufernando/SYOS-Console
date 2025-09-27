@@ -6,7 +6,7 @@ import db.repositories.UserRepository;
 public class BillPrinter {
     private final UserRepository userRepo;
 
-    // ✅ Pass in a UserRepository when creating BillPrinter
+    // Pass in a UserRepository when creating BillPrinter
     public BillPrinter(UserRepository userRepo) {
         this.userRepo = userRepo;
     }

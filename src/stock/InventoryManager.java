@@ -22,11 +22,11 @@ public class InventoryManager {
 
     public InventoryManager(InventoryBatchRepository inventoryRepo,
                             ShelfBatchRepository shelfRepo,
-                            OnlineBatchRepository onlineRepo,   // ✅ added
+                            OnlineBatchRepository onlineRepo,
                             StockReductionStrategy strategy) {
         this.inventoryRepo = inventoryRepo;
         this.shelfRepo = shelfRepo;
-        this.onlineRepo = onlineRepo;   // ✅ set it
+        this.onlineRepo = onlineRepo;
         this.strategy = strategy;
     }
 
@@ -49,7 +49,7 @@ public class InventoryManager {
     public void restockShelf(Product product, int quantity) {
         List<InventoryBatch> invBatches = inventoryRepo.findByProduct(product.getId());
         if (invBatches == null || invBatches.isEmpty()) {
-            System.out.println("⚠️ No inventory available for product " + product.getId());
+            System.out.println("!! No inventory available for product " + product.getId());
             return;
         }
 
@@ -94,9 +94,9 @@ public class InventoryManager {
         }
 
         if (remaining > 0) {
-            System.out.println("⚠️ Could not move full quantity. Missing " + remaining + " units.");
+            System.out.println("!! Could not move full quantity. Missing " + remaining + " units.");
         } else {
-            System.out.println("✅ Successfully restocked SHELF with " + quantity + " units.");
+            System.out.println(" Successfully restocked SHELF with " + quantity + " units.");
         }
     }
 
@@ -104,7 +104,7 @@ public class InventoryManager {
     public void restockOnline(Product product, int quantity) {
         List<InventoryBatch> invBatches = inventoryRepo.findByProduct(product.getId());
         if (invBatches == null || invBatches.isEmpty()) {
-            System.out.println("⚠️ No inventory available for product " + product.getId());
+            System.out.println("!! No inventory available for product " + product.getId());
             return;
         }
 
@@ -150,9 +150,9 @@ public class InventoryManager {
         }
 
         if (remaining > 0) {
-            System.out.println("⚠️ Could not move full quantity. Missing " + remaining + " units from inventory.");
+            System.out.println("!! Could not move full quantity. Missing " + remaining + " units from inventory.");
         } else {
-            System.out.println("✅ Successfully restocked ONLINE stock with " + quantity + " units.");
+            System.out.println(" Successfully restocked ONLINE stock with " + quantity + " units.");
         }
     }
 

@@ -14,7 +14,7 @@ public class ShelfManager {
     public void reduceShelfStock(int productId, int quantity) {
         ShelfBatch shelf = shelfRepo.findByProduct(productId);
         if (shelf == null || shelf.getQuantity() < quantity) {
-            throw new RuntimeException("❌ Not enough shelf stock for product " + productId);
+            throw new RuntimeException("!! Not enough shelf stock for product " + productId);
         }
         shelf.setQuantity(shelf.getQuantity() - quantity);
         shelfRepo.update(shelf);
@@ -24,7 +24,7 @@ public class ShelfManager {
     public void reduceFromShelf(String productCode, int quantity) {
         ShelfBatch shelf = shelfRepo.findByProductCode(productCode);
         if (shelf == null || shelf.getQuantity() < quantity) {
-            throw new RuntimeException("❌ Not enough shelf stock for product " + productCode);
+            throw new RuntimeException("!! Not enough shelf stock for product " + productCode);
         }
         shelf.setQuantity(shelf.getQuantity() - quantity);
         shelfRepo.update(shelf);

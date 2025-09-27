@@ -29,7 +29,7 @@ public class CustomerRepositoryImpl implements CustomerRepository {
                 return true;
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error saving customer: " + e.getMessage());
+            System.out.println("! Error saving customer: " + e.getMessage());
         }
         return false;
     }
@@ -56,7 +56,7 @@ public class CustomerRepositoryImpl implements CustomerRepository {
                 );
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error during login: " + e.getMessage());
+            System.out.println("! Error during login: " + e.getMessage());
         }
         return null;
     }
@@ -81,7 +81,7 @@ public class CustomerRepositoryImpl implements CustomerRepository {
                 );
             }
         } catch (SQLException e) {
-            System.out.println("❌ Error finding customer: " + e.getMessage());
+            System.out.println("! Error finding customer: " + e.getMessage());
         }
         return null;
     }

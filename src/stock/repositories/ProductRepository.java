@@ -11,6 +11,6 @@ public interface ProductRepository {
     List<Product> findAll();
     List<Product> search(String keyword);
 
-    void delete(int id);            // ✅ New method
+    void delete(int id);            // New method
     void deleteByCode(String code);
 }

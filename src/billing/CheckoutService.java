@@ -36,7 +36,7 @@ public class CheckoutService {
         if (currentBill != null) {
             currentBill.removeItem(item);
         } else {
-            throw new IllegalStateException("❌ No active bill to remove item from.");
+            throw new IllegalStateException(" No active bill to remove item from.");
         }
     }
 

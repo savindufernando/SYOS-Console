@@ -37,7 +37,7 @@ public class DiscountRepositoryImpl implements DiscountRepository {
         return new NoDiscount(); // default no discount
     }
 
-    // ✅ Add discount to product
+    //  Add discount to product
     public void addDiscount(int productId, String name, String type, double value, String start, String end) {
         String sql = "INSERT INTO discounts_products " +
                 "(product_id, discount_name, discount_type, discount_value, discount_start, discount_end, status) " +
@@ -58,7 +58,7 @@ public class DiscountRepositoryImpl implements DiscountRepository {
         }
     }
 
-    // ✅ View discounts by status
+    //  View discounts by status
     public void viewDiscounts(String status) {
         String sql = "SELECT d.discount_id, p.name AS product_name, d.discount_name, " +
                 "d.discount_type, d.discount_value, d.discount_start, d.discount_end " +
@@ -85,7 +85,7 @@ public class DiscountRepositoryImpl implements DiscountRepository {
         }
     }
 
-    // ✅ Disable a discount
+    //  Disable a discount
     public void disableDiscount(int discountId) {
         String sql = "UPDATE discounts_products SET status='DISABLED' WHERE discount_id=?";
         try (Connection conn = DatabaseConnection.getInstance();

@@ -5,12 +5,12 @@ import db.repositories.UserRepository;
 public class AuthService {
     private final UserRepository userRepo;
 
-    // ✅ Constructor injection for testing
+    // Constructor injection for testing
     public AuthService(UserRepository userRepo) {
         this.userRepo = userRepo;
     }
 
-    // ✅ Default constructor for production use
+    // Default constructor for production use
     public AuthService() {
         this.userRepo = new UserRepository();
     }

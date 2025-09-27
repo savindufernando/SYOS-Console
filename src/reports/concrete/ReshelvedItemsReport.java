@@ -23,7 +23,7 @@ public class ReshelvedItemsReport extends Report {
     @Override
     protected void fetchData(LocalDate start, LocalDate end) {
         records.clear();
-        LocalDate date = (start != null) ? start : LocalDate.now(); // ✅ fallback to today
+        LocalDate date = (start != null) ? start : LocalDate.now(); // fallback to today
         List<ShelfBatch> batches = shelfRepo.findByDate(date);
 
         for (ShelfBatch sb : batches) {
